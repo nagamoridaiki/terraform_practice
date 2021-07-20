@@ -12,26 +12,59 @@ resource "aws_db_instance" "eventer-db" {
   allocated_storage      = 20
   storage_type           = "gp2"
   engine                 = "mysql"
-  engine_version         = "5.7.30"
-  instance_class         = "db.t2.micro"
+  engine_version         = "5.7"
+  instance_class         = "db.t3.micro"
   name                   = "eventer-db"
   username               = "root"
   password               = "password"
   option_group_name      = aws_db_option_group.main.name
   parameter_group_name   = aws_db_parameter_group.main.name
-  vpc_security_group_ids = [module.db-security-group.security_group_id]
+  vpc_security_group_ids = ["${aws_security_group.db.id}"]
   db_subnet_group_name   = "${aws_db_subnet_group.eventer-db.name}"
   skip_final_snapshot    = true
   publicly_accessible    = true
 }
 
-module "db-security-group" {
-  source      = "./security_group"
+resource "aws_security_group" "db" {
   name        = "db-security-group"
+  description = "Allow DB inbound traffic"
   vpc_id      = aws_vpc.example.id
-  port        = 3306
-  cidr_blocks = ["0.0.0.0/0"]
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = ["${aws_security_group.allow.id}"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "db-security-group"
+  }
 }
+
+resource "aws_security_group" "allow" {
+  name        = "allow"
+  description = "Allow inbound traffic"
+  vpc_id      = aws_vpc.example.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "allow_http"
+  }
+}
+
 
 resource "aws_db_option_group" "main" {
   name = "db-option-group"
@@ -44,24 +77,7 @@ resource "aws_db_option_group" "main" {
 }
 
 resource "aws_db_parameter_group" "main" {
-  name = "db-parameter-group"
-  # DBパラメータグループが適用されるファミリーを設定する。
-  #  - 今回は、MySQL8.0を使用する。
+  name   = "db-parameter-group"
   family = "mysql5.7"
-  # スロークエリログを有効にする。
-  parameter {
-    name  = "slow_query_log"
-    value = 1
-  }
-  # 一般クエリログを有効にする。
-  parameter {
-    name  = "general_log"
-    value = 1
-  }
-  # スロークエリと判断する秒数を設定する。
-  parameter {
-    name  = "long_query_time"
-    value = 5
-  }
 }
 
