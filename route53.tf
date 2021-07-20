@@ -1,5 +1,5 @@
 data "aws_route53_zone" "main" {
-  name = "example_XXXXXXXXX.work"
+  name = "${var.route-53-domain}"
 }
 
 resource "aws_route53_record" "example" {
