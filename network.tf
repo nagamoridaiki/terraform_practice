@@ -5,9 +5,9 @@ resource "aws_vpc" "example" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
-  instance_tenancy     = "default"
+  instance_tenancy     = "${var.project-name}"
   tags = {
-    Name = "example-vpc"
+    Name = "${var.project-name}-vpc"
   }
 }
 # -----------------------------------------
@@ -36,14 +36,14 @@ resource "aws_subnet" "public_c" {
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.example.id
   tags = {
-    Name = "example-igw"
+    Name = "${var.project-name}-igw"
   }
 }
 # Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.example.id
   tags = {
-    Name = "example-rt-pub"
+    Name = "${var.project-name}-rt-pub"
   }
 }
 # Route
@@ -87,13 +87,13 @@ resource "aws_subnet" "private_c" {
 resource "aws_route_table" "private_a" {
   vpc_id = aws_vpc.example.id
   tags = {
-    Name = "example-rt-pri-a"
+    Name = "${var.project-name}-rt-pri-a"
   }
 }
 resource "aws_route_table" "private_c" {
   vpc_id = aws_vpc.example.id
   tags = {
-    Name = "example-rt-pri-c"
+    Name = "${var.project-name}-rt-pri-c"
   }
 }
 # Route
@@ -121,14 +121,14 @@ resource "aws_eip" "nat_a" {
   vpc        = true
   depends_on = [aws_internet_gateway.igw]
   tags = {
-    Name = "example-eip-a"
+    Name = "${var.project-name}-eip-a"
   }
 }
 resource "aws_eip" "nat_c" {
   vpc        = true
   depends_on = [aws_internet_gateway.igw]
   tags = {
-    Name = "example-eip-c"
+    Name = "${var.project-name}-eip-c"
   }
 }
 # Nat Gateway
@@ -137,7 +137,7 @@ resource "aws_nat_gateway" "nat_a" {
   subnet_id     = aws_subnet.public_a.id
   depends_on    = [aws_internet_gateway.igw]
   tags = {
-    Name = "example-nat-gw-a"
+    Name = "${var.project-name}-nat-gw-a"
   }
 }
 resource "aws_nat_gateway" "nat_c" {
@@ -145,6 +145,6 @@ resource "aws_nat_gateway" "nat_c" {
   subnet_id     = aws_subnet.public_c.id
   depends_on    = [aws_internet_gateway.igw]
   tags = {
-    Name = "example-nat-gw-c"
+    Name = "${var.project-name}-nat-gw-c"
   }
 }

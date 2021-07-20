@@ -1,9 +1,9 @@
 # ECS クラスター
-resource "aws_ecs_cluster" "example" {
-  name = "example"
+resource "aws_ecs_cluster" "cluster" {
+  name = "${var.project-name}"
 }
 # タスク定義
-resource "aws_ecs_task_definition" "example" {
+resource "aws_ecs_task_definition" "status" {
   family                   = "linkode-example"
   cpu                      = "256"
   memory                   = "1024"
@@ -11,15 +11,15 @@ resource "aws_ecs_task_definition" "example" {
   requires_compatibilities = ["FARGATE"]
   container_definitions = jsonencode([
     {
-      "name" : "example",
+      "name" : "${var.project-name}",
       "image" : "${aws_ecr_repository.example.repository_url}:latest",
       "essential" : true,
       "logConfiguration" : {
         "logDriver" : "awslogs",
         "options" : {
           "awslogs-region" : "us-east-2",
-          "awslogs-stream-prefix" : "tf-example",
-          "awslogs-group" : "/ecs/example"
+          "awslogs-stream-prefix" : "tf-${var.project-name}",
+          "awslogs-group" : "/ecs/${var.project-name}"
         }
       },
       "portMappings" : [
@@ -36,9 +36,9 @@ resource "aws_ecs_task_definition" "example" {
 
 # ECS サービス
 resource "aws_ecs_service" "example" {
-  name                              = "example"
-  cluster                           = aws_ecs_cluster.example.arn
-  task_definition                   = aws_ecs_task_definition.example.arn
+  name                              = "${var.project-name}"
+  cluster                           = aws_ecs_cluster.cluster.arn
+  task_definition                   = aws_ecs_task_definition.status.arn
   desired_count                     = 1
   launch_type                       = "FARGATE"
   platform_version                  = "1.4.0"
@@ -53,7 +53,7 @@ resource "aws_ecs_service" "example" {
   }
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs.arn
-    container_name   = "example"
+    container_name   = "${var.project-name}"
     container_port   = 3000
   }
   lifecycle {
@@ -62,7 +62,7 @@ resource "aws_ecs_service" "example" {
 }
 module "tf-example_sg" {
   source      = "./security_group"
-  name        = "tf-example-sg"
+  name        = "tf-${var.project-name}-sg"
   vpc_id      = aws_vpc.example.id
   port        = 3000
   cidr_blocks = [aws_vpc.example.cidr_block]
